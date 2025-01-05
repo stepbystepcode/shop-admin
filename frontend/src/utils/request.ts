@@ -1,19 +1,19 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
-import { useAuthStore } from '@/store/auth'
+import { useUserStore } from '@/stores/user'
 
 const service: AxiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: '/api',  // 使用 /api 前缀，将被 vite 代理处理
   timeout: 5000
 })
 
 // Request interceptor
 service.interceptors.request.use(
   (config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers['Authorization'] = `Bearer ${authStore.token}`
+    const userStore = useUserStore()
+    if (userStore.token) {
+      config.headers['Authorization'] = `Bearer ${userStore.token}`
     }
     return config
   },
@@ -34,8 +34,8 @@ service.interceptors.response.use(
     ElMessage.error(message)
     
     if (error.response?.status === 401) {
-      const authStore = useAuthStore()
-      authStore.logout()
+      const userStore = useUserStore()
+      userStore.logout()
     }
     
     return Promise.reject(error)

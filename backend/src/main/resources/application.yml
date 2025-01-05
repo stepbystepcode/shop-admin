@@ -1,5 +1,8 @@
 server:
   port: 8080
+  error:
+    whitelabel:
+      enabled: false
 
 spring:
   datasource:
@@ -15,14 +18,18 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+  mvc:
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      add-mappings: false
+  security:
+    basic:
+      enabled: false
+  main:
+    allow-bean-definition-overriding: true
 
 app:
-  jwtSecret: 9a4f2c8d3b7a1e6f0h9g4d2b5m8k7i3j6
-  jwtExpirationInMs: 86400000  # 24 hours
-
-logging:
-  level:
-    org.springframework.security: DEBUG
-    com.merchant: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  jwtSecret: 9a4f2c8d3b7a1e6f0h9g4d2b5m8k7i3j6n1p4q8r2t6u9w3x7y0z5a1c4e8i2l6o0s3v7b9d2f5h8k1m4n7p0q3r6t9u2w5x8y1z4
+  jwtExpirationInMs: 86400000

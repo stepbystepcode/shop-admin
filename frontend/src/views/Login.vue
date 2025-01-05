@@ -11,13 +11,17 @@
         label-position="top"
       >
         <el-form-item label="Username" prop="username">
-          <el-input v-model="loginForm.username" />
+          <el-input 
+            v-model="loginForm.username"
+            @keyup.enter="handleLogin"
+          />
         </el-form-item>
         <el-form-item label="Password" prop="password">
           <el-input
             v-model="loginForm.password"
             type="password"
             show-password
+            @keyup.enter="handleLogin"
           />
         </el-form-item>
         <el-form-item>

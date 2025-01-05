@@ -1,10 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useUserStore } from '@/stores/user';
-import MainLayout from '@/layouts/MainLayout.vue';
-import Login from '@/views/Login.vue';
-import Dashboard from '@/views/Dashboard.vue';
-import MerchantList from '@/views/merchant/List.vue';
-import MerchantDetail from '@/views/merchant/Detail.vue';
+import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -12,45 +7,45 @@ const router = createRouter({
     {
       path: '/login',
       name: 'Login',
-      component: Login,
+      component: () => import('@/views/Login.vue'),
       meta: { requiresAuth: false }
     },
     {
       path: '/',
-      component: MainLayout,
+      component: () => import('@/layouts/MainLayout.vue'),
       meta: { requiresAuth: true },
       children: [
         {
           path: '',
           name: 'Dashboard',
-          component: Dashboard
+          component: () => import('@/views/Dashboard.vue')
         },
         {
           path: 'merchants',
           name: 'MerchantList',
-          component: MerchantList
+          component: () => import('@/views/merchant/List.vue')
         },
         {
           path: 'merchants/:id',
           name: 'MerchantDetail',
-          component: MerchantDetail
+          component: () => import('@/views/merchant/Detail.vue')
         }
       ]
     }
   ]
-});
+})
 
 router.beforeEach((to, from, next) => {
-  const userStore = useUserStore();
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const userStore = useUserStore()
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
-  if (requiresAuth && !userStore.token) {
-    next('/login');
-  } else if (to.path === '/login' && userStore.token) {
-    next('/');
+  if (requiresAuth && !userStore.isLoggedIn()) {
+    next('/login')
+  } else if (to.path === '/login' && userStore.isLoggedIn()) {
+    next('/')
   } else {
-    next();
+    next()
   }
-});
+})
 
-export default router;
+export default router

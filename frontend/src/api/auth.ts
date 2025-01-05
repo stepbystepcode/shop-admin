@@ -5,9 +5,14 @@ export interface LoginData {
   password: string
 }
 
+export interface LoginResponse {
+  accessToken: string
+  tokenType: string
+}
+
 export const login = (data: LoginData) => {
-  return request({
-    url: '/auth/login',
+  return request<LoginResponse>({
+    url: '/api/auth/login',
     method: 'post',
     data
   })
@@ -15,14 +20,14 @@ export const login = (data: LoginData) => {
 
 export const logout = () => {
   return request({
-    url: '/auth/logout',
+    url: '/api/auth/logout',
     method: 'post'
   })
 }
 
 export const getUserInfo = () => {
   return request({
-    url: '/auth/user',
+    url: '/api/auth/user',
     method: 'get'
   })
 }
