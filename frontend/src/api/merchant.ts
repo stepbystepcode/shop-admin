@@ -72,7 +72,7 @@ export const auditMerchant = (params: {
   status: 'APPROVED' | 'REJECTED';
   rejectReason?: string;
 }) => {
-  return api.post(`/merchants/${params.id}/audit`, {
+  return api.patch(`/merchants/${params.id}/status`, {
     status: params.status,
     rejectReason: params.rejectReason
   });

@@ -5,6 +5,7 @@ import com.merchant.entity.Merchant;
 import com.merchant.entity.MerchantStatus;
 import com.merchant.service.MerchantService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +23,21 @@ public class MerchantController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Log("查询商家列表")
-    public ResponseEntity<List<Merchant>> getAllMerchants() {
-        return ResponseEntity.ok(merchantService.getAllMerchants());
+    public ResponseEntity<Map<String, Object>> getAllMerchants(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String businessType,
+            @RequestParam(required = false) MerchantStatus status
+    ) {
+        Page<Merchant> merchantPage = merchantService.getAllMerchants(page, size, name, businessType, status);
+        Map<String, Object> response = Map.of(
+            "list", merchantPage.getContent(),
+            "total", merchantPage.getTotalElements(),
+            "page", page,
+            "pageSize", size
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/status/{status}")
@@ -42,6 +56,13 @@ public class MerchantController {
         MerchantStatus status = MerchantStatus.valueOf(statusUpdate.get("status"));
         String rejectReason = statusUpdate.get("rejectReason");
         return ResponseEntity.ok(merchantService.updateMerchantStatus(id, status, rejectReason));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Log("获取商家详情")
+    public ResponseEntity<Merchant> getMerchantDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(merchantService.getMerchantById(id));
     }
 
     @GetMapping("/statistics")
