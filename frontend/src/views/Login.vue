@@ -3,7 +3,6 @@
     <el-card class="login-card">
       <template #header>
         <div class="login-header">
-          <img src="@/assets/logo.png" alt="Logo" class="logo" />
           <h2>商家管理系统</h2>
         </div>
       </template>
@@ -85,7 +84,7 @@ const handleLogin = async () => {
         const success = await userStore.login(loginForm);
         if (success) {
           ElMessage.success('登录成功');
-          router.push('/');
+          router.push('/merchants');
         }
       } catch (error) {
         console.error('登录失败:', error);
@@ -105,47 +104,47 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   background-color: #f5f7fa;
-  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .login-card {
   width: 400px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   
   :deep(.el-card__header) {
-    padding: 30px 20px;
-    border-bottom: none;
+    padding: 0;
   }
 }
 
 .login-header {
   text-align: center;
-
-  .logo {
-    width: 80px;
-    height: 80px;
-    margin-bottom: 16px;
-  }
-
+  padding: 20px 0;
+  background-color: #409eff;
+  color: white;
+  
   h2 {
     margin: 0;
     font-size: 24px;
-    color: #303133;
   }
 }
 
 .login-button {
   width: 100%;
-  padding: 12px 0;
-  font-size: 16px;
+  margin-top: 20px;
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 8px;
+  font-weight: 500;
 }
 
 :deep(.el-input__wrapper) {
-  padding: 1px 11px;
-}
-
-:deep(.el-input__prefix) {
-  font-size: 16px;
+  box-shadow: 0 0 0 1px #dcdfe6 inset;
+  
+  &:hover {
+    box-shadow: 0 0 0 1px #c0c4cc inset;
+  }
+  
+  &.is-focus {
+    box-shadow: 0 0 0 1px #409eff inset;
+  }
 }
 </style>

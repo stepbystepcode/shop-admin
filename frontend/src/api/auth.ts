@@ -12,7 +12,7 @@ export interface LoginResponse {
 
 export const login = (data: LoginData) => {
   return request<LoginResponse>({
-    url: '/api/auth/login',
+    url: '/auth/login',
     method: 'post',
     data
   })
@@ -20,14 +20,14 @@ export const login = (data: LoginData) => {
 
 export const logout = () => {
   return request({
-    url: '/api/auth/logout',
+    url: '/auth/logout',
     method: 'post'
   })
 }
 
 export const getUserInfo = () => {
   return request({
-    url: '/api/auth/user',
+    url: '/auth/info',
     method: 'get'
   })
 }
