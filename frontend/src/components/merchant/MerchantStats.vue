@@ -98,11 +98,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
-import type { MerchantStatistics, MerchantTrend } from '@/types/statistics'
-import { getMerchantStatistics, getMerchantTrend } from '@/api/statistics'
-import { ElMessage } from 'element-plus'
+import type { MerchantStats } from '@/types/merchant'
+import { getMerchantStats, getMerchantTrends } from '@/api/merchant'
 
-const stats = ref<MerchantStatistics>({
+const stats = ref<MerchantStats>({
   total: 0,
   pending: 0,
   approved: 0,
@@ -154,7 +153,7 @@ const initPieChart = () => {
   pieChart.setOption(option)
 }
 
-const updateLineChart = (trends: MerchantTrend[]) => {
+const updateLineChart = (trends: any[]) => {
   if (!lineChartRef.value || !lineChart) return
 
   const dates = Array.from(new Set(trends.map(t => t.date)))
@@ -191,23 +190,23 @@ const updateLineChart = (trends: MerchantTrend[]) => {
 
 const loadStats = async () => {
   try {
-    const response = await getMerchantStatistics()
+    const response = await getMerchantStats()
     stats.value = response.data
     initPieChart()
   } catch (error) {
-    ElMessage.error('加载统计数据失败')
+    console.error('Failed to load merchant stats:', error)
   }
 }
 
 const loadTrendData = async () => {
   try {
-    const response = await getMerchantTrend(trendDays.value)
+    const response = await getMerchantTrends(trendDays.value)
     if (!lineChart) {
       lineChart = echarts.init(lineChartRef.value!)
     }
     updateLineChart(response.data)
   } catch (error) {
-    ElMessage.error('加载趋势数据失败')
+    console.error('Failed to load trend data:', error)
   }
 }
 

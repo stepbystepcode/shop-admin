@@ -1,6 +1,7 @@
 <template>
   <el-dialog
-    v-model="visible"
+    :model-value="visible"
+    @update:model-value="emit('update:visible', $event)"
     :title="title"
     width="60%"
     :before-close="handleClose"
@@ -84,7 +85,19 @@ const props = defineProps<{
   merchantData?: Merchant
 }>()
 
-const emit = defineEmits(['update:visible', 'success'])
+const emit = defineEmits<{
+  'update:visible': [value: boolean]
+  'success': []
+}>()
+
+const title = computed(() => {
+  const titleMap = {
+    create: '新增商家',
+    edit: '编辑商家',
+    view: '商家详情'
+  }
+  return titleMap[props.mode]
+})
 
 const formRef = ref<FormInstance>()
 const form = ref<Partial<Merchant>>({
@@ -120,38 +133,22 @@ const rules: FormRules = {
   ]
 }
 
-const title = computed(() => {
-  const titles = {
-    create: '添加商家',
-    edit: '编辑商家',
-    view: '商家详情'
-  }
-  return titles[props.mode]
-})
-
 const handleClose = () => {
   emit('update:visible', false)
-  form.value = {
-    name: '',
-    contactPerson: '',
-    phone: '',
-    email: '',
-    address: '',
-    businessLicense: ''
-  }
+  formRef.value?.resetFields()
 }
 
 const handleSubmit = async () => {
   if (!formRef.value) return
   
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid, fields) => {
     if (valid) {
       try {
         if (props.mode === 'create') {
           await createMerchant(form.value)
-          ElMessage.success('添加成功')
-        } else if (props.mode === 'edit' && props.merchantData?.id) {
-          await updateMerchant(props.merchantData.id, form.value)
+          ElMessage.success('创建成功')
+        } else {
+          await updateMerchant(props.merchantData!.id, form.value)
           ElMessage.success('更新成功')
         }
         emit('success')
@@ -164,7 +161,7 @@ const handleSubmit = async () => {
 }
 
 const handleUploadSuccess = (response: any) => {
-  form.value.businessLicense = response.url
+  form.value.businessLicense = response.data.url
 }
 
 const beforeUpload = (file: File) => {
@@ -172,7 +169,7 @@ const beforeUpload = (file: File) => {
   const isLt2M = file.size / 1024 / 1024 < 2
 
   if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
+    ElMessage.error('请上传图片文件!')
     return false
   }
   if (!isLt2M) {
@@ -189,6 +186,11 @@ if (props.merchantData && props.mode !== 'create') {
 </script>
 
 <style scoped>
+.dialog-footer {
+  padding: 20px 0;
+  text-align: right;
+}
+
 .upload-demo {
   margin-bottom: 10px;
 }

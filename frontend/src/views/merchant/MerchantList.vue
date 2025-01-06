@@ -1,63 +1,56 @@
 <template>
   <div class="merchant-list">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span>商家列表</span>
-          <el-button type="primary" @click="handleAdd">添加商家</el-button>
-        </div>
-      </template>
+    <el-card class="filter-container">
+      <el-form :inline="true" :model="queryParams" class="demo-form-inline">
+        <el-form-item label="商家名称">
+          <el-input v-model="queryParams.name" placeholder="商家名称" clearable />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="queryParams.status" placeholder="审核状态" clearable>
+            <el-option label="待审核" value="PENDING" />
+            <el-option label="已通过" value="APPROVED" />
+            <el-option label="已拒绝" value="REJECTED" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery">查询</el-button>
+          <el-button @click="resetQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
-      <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-        <el-tab-pane label="全部" name="all" />
-        <el-tab-pane label="待审核" name="pending" />
-        <el-tab-pane label="已通过" name="approved" />
-        <el-tab-pane label="已拒绝" name="rejected" />
-        <el-tab-pane label="已禁用" name="disabled" />
-      </el-tabs>
-
+    <el-card class="table-container">
       <el-table :data="merchants" style="width: 100%" v-loading="loading">
+        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="商家名称" />
         <el-table-column prop="contactName" label="联系人" />
         <el-table-column prop="contactPhone" label="联系电话" />
         <el-table-column prop="businessType" label="经营类型" />
         <el-table-column prop="status" label="状态">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusText(row.status) }}
+          <template #default="scope">
+            <el-tag :type="getStatusType(scope.row.status)">
+              {{ getStatusText(scope.row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间">
-          <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+        <el-table-column prop="createdAt" label="申请时间">
+          <template #default="scope">
+            {{ formatDate(scope.row.createdAt) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200">
-          <template #default="{ row }">
-            <el-button-group>
-              <el-button size="small" @click="handleView(row)">查看</el-button>
-              <el-button 
-                size="small" 
-                type="primary" 
-                v-if="row.status === 'PENDING'"
-                @click="handleAudit(row)"
-              >
-                审核
-              </el-button>
-              <el-button 
-                size="small" 
-                :type="row.status === 'DISABLED' ? 'success' : 'warning'"
-                @click="handleToggleStatus(row)"
-              >
-                {{ row.status === 'DISABLED' ? '启用' : '禁用' }}
-              </el-button>
-            </el-button-group>
+          <template #default="scope">
+            <el-button size="small" @click="handleView(scope.row)">查看</el-button>
+            <el-button 
+              size="small" 
+              type="primary" 
+              v-if="scope.row.status === 'PENDING'"
+              @click="handleAudit(scope.row)">审核</el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <div class="pagination">
+      <div class="pagination-container">
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
@@ -73,8 +66,9 @@
     <!-- 审核对话框 -->
     <el-dialog
       v-model="auditDialogVisible"
-      title="商家审核"
+      :title="'商家审核 - ' + currentMerchant?.name"
       width="500px"
+      @close="handleClose"
     >
       <el-form :model="auditForm" label-width="100px">
         <el-form-item label="审核结果">
@@ -83,7 +77,7 @@
             <el-radio label="REJECTED">拒绝</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="审核意见" v-if="auditForm.status === 'REJECTED'">
+        <el-form-item v-if="auditForm.status === 'REJECTED'" label="拒绝原因">
           <el-input
             v-model="auditForm.rejectReason"
             type="textarea"
@@ -95,7 +89,12 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="auditDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitAudit">确认</el-button>
+          <el-button 
+            type="primary" 
+            @click="auditForm.status === 'APPROVED' ? handleApprove() : handleReject()"
+          >
+            确认
+          </el-button>
         </span>
       </template>
     </el-dialog>
@@ -106,7 +105,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Merchant } from '@/types/merchant'
-import { getMerchants, auditMerchant, updateMerchantStatus } from '@/api/merchant'
+import { getMerchants, auditMerchant } from '@/api/merchant'
 import { formatDate } from '@/utils/format'
 
 const loading = ref(false)
@@ -114,12 +113,18 @@ const merchants = ref<Merchant[]>([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const total = ref(0)
-const activeTab = ref('all')
+
+const queryParams = ref({
+  name: '',
+  status: '',
+  pageNum: 1,
+  pageSize: 10
+})
 
 // 审核相关
 const auditDialogVisible = ref(false)
+const currentMerchant = ref<Merchant | null>(null)
 const auditForm = ref({
-  id: 0,
   status: 'APPROVED',
   rejectReason: ''
 })
@@ -144,101 +149,121 @@ const getStatusText = (status: string) => {
   return texts[status] || status
 }
 
-const loadMerchants = async () => {
+const handleQuery = async () => {
   try {
     loading.value = true
     const params = {
+      name: queryParams.value.name,
+      status: queryParams.value.status,
       page: currentPage.value,
-      pageSize: pageSize.value,
-      status: activeTab.value === 'all' ? '' : activeTab.value.toUpperCase()
+      pageSize: pageSize.value
     }
     const { data } = await getMerchants(params)
-    // 处理后端返回的数组数据
     if (Array.isArray(data)) {
       merchants.value = data
       total.value = data.length
     } else {
-      // 如果后端返回的是分页格式
       merchants.value = data.list || []
       total.value = data.total || 0
     }
   } catch (error) {
-    console.error('加载商家列表失败:', error)
-    ElMessage.error('加载商家列表失败')
+    console.error('查询商家列表失败:', error)
+    ElMessage.error('查询商家列表失败')
   } finally {
     loading.value = false
   }
 }
 
-const handleTabClick = () => {
-  currentPage.value = 1
-  loadMerchants()
-}
-
-const handleAdd = () => {
-  // TODO: 实现添加商家功能
+const resetQuery = () => {
+  queryParams.value = {
+    name: '',
+    status: '',
+    pageNum: 1,
+    pageSize: 10
+  }
+  handleQuery()
 }
 
 const handleView = (row: Merchant) => {
-  // TODO: 实现查看商家详情功能
+  // TODO: 实现查看详情功能
+  console.log('查看商家详情:', row)
 }
 
 const handleAudit = (row: Merchant) => {
+  currentMerchant.value = row
   auditForm.value = {
-    id: row.id,
     status: 'APPROVED',
     rejectReason: ''
   }
   auditDialogVisible.value = true
 }
 
-const submitAudit = async () => {
+const handleApprove = async () => {
+  if (!currentMerchant.value) return
+  
   try {
+    loading.value = true
     await auditMerchant({
-      id: auditForm.value.id,
-      status: auditForm.value.status,
-      rejectReason: auditForm.value.status === 'REJECTED' ? auditForm.value.rejectReason : undefined
+      id: currentMerchant.value.id,
+      status: 'APPROVED',
+      rejectReason: ''
     })
-    ElMessage.success('审核成功')
+    ElMessage.success('审核通过成功')
     auditDialogVisible.value = false
-    loadMerchants()
-  } catch (error) {
+    handleQuery()
+  } catch (error: any) {
     console.error('审核失败:', error)
-    ElMessage.error('审核失败')
+    ElMessage.error(error.response?.data?.message || '审核失败')
+  } finally {
+    loading.value = false
   }
 }
 
-const handleToggleStatus = async (row: Merchant) => {
-  const newStatus = row.status === 'DISABLED' ? 'APPROVED' : 'DISABLED'
-  const action = newStatus === 'DISABLED' ? '禁用' : '启用'
+const handleReject = async () => {
+  if (!currentMerchant.value) return
+  if (!auditForm.value.rejectReason) {
+    ElMessage.warning('请输入拒绝原因')
+    return
+  }
   
   try {
-    await ElMessageBox.confirm(`确定要${action}该商家吗？`, '提示', {
-      type: 'warning'
+    loading.value = true
+    await auditMerchant({
+      id: currentMerchant.value.id,
+      status: 'REJECTED',
+      rejectReason: auditForm.value.rejectReason
     })
-    await updateMerchantStatus(row.id, newStatus)
-    ElMessage.success(`${action}成功`)
-    loadMerchants()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error(`${action}失败:`, error)
-      ElMessage.error(`${action}失败`)
-    }
+    ElMessage.success('审核拒绝成功')
+    auditDialogVisible.value = false
+    handleQuery()
+  } catch (error: any) {
+    console.error('审核失败:', error)
+    ElMessage.error(error.response?.data?.message || '审核失败')
+  } finally {
+    loading.value = false
   }
 }
 
 const handleSizeChange = (val: number) => {
   pageSize.value = val
-  loadMerchants()
+  handleQuery()
 }
 
 const handleCurrentChange = (val: number) => {
   currentPage.value = val
-  loadMerchants()
+  handleQuery()
+}
+
+const handleClose = () => {
+  currentMerchant.value = null
+  auditForm.value = {
+    status: 'APPROVED',
+    rejectReason: ''
+  }
 }
 
 onMounted(() => {
-  loadMerchants()
+  handleQuery()
 })
 </script>
 
@@ -247,13 +272,15 @@ onMounted(() => {
   padding: 20px;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.filter-container {
+  margin-bottom: 20px;
 }
 
-.pagination {
+.table-container {
+  margin-top: 20px;
+}
+
+.pagination-container {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;

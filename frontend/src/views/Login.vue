@@ -2,7 +2,10 @@
   <div class="login-container">
     <el-card class="login-card">
       <template #header>
-        <h2>Admin Login</h2>
+        <div class="login-header">
+          <img src="@/assets/logo.png" alt="Logo" class="logo" />
+          <h2>商家管理系统</h2>
+        </div>
       </template>
       <el-form
         ref="formRef"
@@ -10,23 +13,32 @@
         :rules="rules"
         label-position="top"
       >
-        <el-form-item label="Username" prop="username">
+        <el-form-item label="用户名" prop="username">
           <el-input 
             v-model="loginForm.username"
+            placeholder="请输入用户名"
+            prefix-icon="User"
             @keyup.enter="handleLogin"
           />
         </el-form-item>
-        <el-form-item label="Password" prop="password">
+        <el-form-item label="密码" prop="password">
           <el-input
             v-model="loginForm.password"
             type="password"
             show-password
+            placeholder="请输入密码"
+            prefix-icon="Lock"
             @keyup.enter="handleLogin"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleLogin" :loading="loading">
-            Login
+          <el-button 
+            type="primary" 
+            class="login-button" 
+            @click="handleLogin" 
+            :loading="loading"
+          >
+            {{ loading ? '登录中...' : '登录' }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -38,7 +50,9 @@
 import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
+import { User, Lock } from '@element-plus/icons-vue';
 import type { FormInstance } from 'element-plus';
+import { ElMessage } from 'element-plus';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -51,8 +65,14 @@ const loginForm = reactive({
 });
 
 const rules = {
-  username: [{ required: true, message: 'Please input username', trigger: 'blur' }],
-  password: [{ required: true, message: 'Please input password', trigger: 'blur' }]
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度应在 3 到 20 个字符之间', trigger: 'blur' }
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度应在 6 到 20 个字符之间', trigger: 'blur' }
+  ]
 };
 
 const handleLogin = async () => {
@@ -64,8 +84,12 @@ const handleLogin = async () => {
       try {
         const success = await userStore.login(loginForm);
         if (success) {
+          ElMessage.success('登录成功');
           router.push('/');
         }
+      } catch (error) {
+        console.error('登录失败:', error);
+        ElMessage.error('登录失败，请检查用户名和密码');
       } finally {
         loading.value = false;
       }
@@ -81,13 +105,47 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   background-color: #f5f7fa;
+  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .login-card {
   width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   
   :deep(.el-card__header) {
-    text-align: center;
+    padding: 30px 20px;
+    border-bottom: none;
   }
+}
+
+.login-header {
+  text-align: center;
+
+  .logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #303133;
+  }
+}
+
+.login-button {
+  width: 100%;
+  padding: 12px 0;
+  font-size: 16px;
+}
+
+:deep(.el-input__wrapper) {
+  padding: 1px 11px;
+}
+
+:deep(.el-input__prefix) {
+  font-size: 16px;
 }
 </style>

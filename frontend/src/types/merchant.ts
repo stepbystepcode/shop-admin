@@ -17,4 +17,25 @@ export interface MerchantStats {
   approved: number;
   rejected: number;
   disabled: number;
+  approvalRate: number;
+  rejectionRate: number;
+}
+
+export interface MerchantTrend {
+  date: string;
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface MerchantLog {
+  id: number;
+  timestamp: string;
+  operator: string;
+  merchantId: number;
+  merchantName: string;
+  operationType: 'AUDIT' | 'UPDATE' | 'STATUS_CHANGE';
+  details: string;
+  ip: string;
 }

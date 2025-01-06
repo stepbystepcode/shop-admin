@@ -38,8 +38,10 @@ public class MerchantController {
     @Log("更新商家状态")
     public ResponseEntity<Merchant> updateMerchantStatus(
             @PathVariable Long id,
-            @RequestBody Map<String, MerchantStatus> statusUpdate) {
-        return ResponseEntity.ok(merchantService.updateMerchantStatus(id, statusUpdate.get("status")));
+            @RequestBody Map<String, String> statusUpdate) {
+        MerchantStatus status = MerchantStatus.valueOf(statusUpdate.get("status"));
+        String rejectReason = statusUpdate.get("rejectReason");
+        return ResponseEntity.ok(merchantService.updateMerchantStatus(id, status, rejectReason));
     }
 
     @GetMapping("/statistics")
